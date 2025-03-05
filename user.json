@@ -1,24 +1,12 @@
-[
-  {
-    "YumeMizuki": [
-      {
-        "password": [
-          "V21WeE1qWTBOekk9", 
-          "Z0hUSXowMEg9", 
-          "SFF1WHBUQVQ9", 
-          "WnVPRVFWaE89", 
-          "RmFPVXdGeFM9", 
-          "VGxMVjFGOXQ9", 
-          "ekF2UDlzOTU9", 
-          "RXBZamxRUE49", 
-          "Wnc5c1d3bzk9", 
-          "TzdSaU1mNHM9", 
-          "dWJaWGRlSnE9"
-        ]
-      },
-      {
-        "redirect": "./Mizuki.zip"
-      }
-    ]
+{
+  "version": "1.0.0",
+  "secret_password": "Admin-Azrefta-List-2025",
+  "YumeMizuki": {
+    "passwords": [
+      "zM1zUk1",
+      "4zR3ftA",
+      "zZ3r4aN"
+    ],
+    "download_path": "./Mizuki.zip"
   }
-]
+}

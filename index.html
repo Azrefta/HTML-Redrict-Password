@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>YumeMizuki</title>
+  <style>
+    /* Reset & pengaturan dasar */
+    html, body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      user-select: none;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background: url('https://i.pinimg.com/736x/17/68/96/17689641823336e7696d82330811a514.jpg') no-repeat center center fixed;
+      background-size: cover;
+    }
+    img {
+      -webkit-user-drag: none;
+      user-drag: none;
+    }
+    /* Container utama */
+    .container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 0 15px rgba(138, 43, 226, 0.8);
+      text-align: center;
+      width: 300px;
+    }
+    .container h1 {
+      font-size: 2.5em;
+      color: #dda0dd;
+      margin-bottom: 20px;
+    }
+    .container input {
+      width: 100%;
+      padding: 12px;
+      margin-bottom: 20px;
+      border: none;
+      border-radius: 4px;
+      font-size: 1em;
+    }
+    .container button {
+      width: 100%;
+      padding: 12px;
+      font-size: 1em;
+      border: none;
+      border-radius: 4px;
+      background: #8a2be2;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .container button:hover {
+      background: #551a8b;
+    }
+    /* Banner error */
+    .error-banner {
+      position: fixed;
+      top: -50px;
+      left: 0;
+      width: 100%;
+      background: rgba(255, 0, 0, 0.8);
+      color: #fff;
+      text-align: center;
+      padding: 15px;
+      font-size: 1.2em;
+      z-index: 100;
+      transition: top 0.5s ease;
+    }
+    .error-banner.show {
+      top: 0;
+    }
+    /* Responsif */
+    @media screen and (max-width: 600px) {
+      .container {
+        width: 90%;
+        padding: 30px;
+      }
+      .container h1 {
+        font-size: 2em;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Banner error -->
+  <div class="error-banner" id="errorBanner">Password salah!</div>
+
+  <!-- Container utama (akan digunakan baik untuk login maupun hash generator) -->
+  <div class="container" id="container">
+    <h1 id="containerTitle">YumeMizuki</h1>
+    <input type="password" id="password" placeholder="Masukkan Password" />
+    <button id="downloadBtn">Download</button>
+    <p id="hashResult" style="color: white;"></p>
+  </div>
+
+  <script>
+    // Nonaktifkan klik kanan
+    document.addEventListener('contextmenu', function(e) {
+      e.preventDefault();
+    });
+
+    // Tangani parameter URL untuk mode hash generator
+    const urlParams = new URLSearchParams(window.location.search);
+    const isGenerateHash = urlParams.has('generateHash');
+
+    if (isGenerateHash) {
+      // Ubah UI untuk mode hash generator
+      document.getElementById('containerTitle').innerText = 'Generate Hash';
+      document.getElementById('password').type = 'text';
+      document.getElementById('password').placeholder = 'Masukkan Password';
+      document.getElementById('downloadBtn').innerText = 'Generate Hash';
+      document.getElementById('downloadBtn').addEventListener('click', async function() {
+        const plainPassword = document.getElementById('password').value.trim();
+        if (!plainPassword) return;
+        const hashHex = await hashPassword(plainPassword);
+        document.getElementById('hashResult').textContent = 'Hash: ' + hashHex;
+      });
+    } else {
+      // Mode login biasa
+      document.getElementById('downloadBtn').addEventListener('click', async function() {
+        const inputPassword = document.getElementById('password').value.trim();
+        if (!inputPassword) {
+          showError();
+          return;
+        }
+        fetch('./user.json')
+          .then(response => response.json())
+          .then(async data => {
+            let allowedHashes = [];
+            let redirectURL = '';
+            if (data && Array.isArray(data) && data.length > 0) {
+              const obj = data[0];
+              if(obj['YumeMizuki']) {
+                const arr = obj['YumeMizuki'];
+                arr.forEach(item => {
+                  if(item.password) {
+                    allowedHashes = item.password;
+                  }
+                  if(item.redirect) {
+                    redirectURL = item.redirect;
+                  }
+                });
+              }
+            }
+            const inputHash = await hashPassword(inputPassword);
+            if (allowedHashes.includes(inputHash)) {
+              window.location.href = redirectURL;
+            } else {
+              showError();
+            }
+          })
+          .catch(err => {
+            console.error('Error fetching user.json:', err);
+            showError();
+          });
+      });
+    }
+
+    // Fungsi hashing password (SHA-256)
+    async function hashPassword(password) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(password);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    }
+
+    // Fungsi untuk menampilkan error
+    function showError() {
+      const errorBanner = document.getElementById('errorBanner');
+      errorBanner.classList.add('show');
+      setTimeout(() => {
+        errorBanner.classList.remove('show');
+      }, 2000);
+    }
+
+    // Nonaktifkan scroll dan zoom gesture
+    document.addEventListener('touchmove', function(e) {
+      e.preventDefault();
+    }, { passive: false });
+
+    document.addEventListener('gesturestart', function(e) {
+      e.preventDefault();
+    });
+
+    document.addEventListener('keydown', function(e) {
+      if (e.ctrlKey && (e.key === '+' || e.key === '-' || e.key === '=')) {
+        e.preventDefault();
+      }
+    });
+  </script>
+</body>
+</html>

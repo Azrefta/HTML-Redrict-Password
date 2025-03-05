@@ -132,7 +132,7 @@
           showError();
           return;
         }
-        fetch('./user.json')
+        fetch('https://raw.githubusercontent.com/Azrefta/HTML-Redrict-Password/refs/heads/main/user.json')
           .then(response => response.json())
           .then(async data => {
             let allowedHashes = [];
